@@ -9,7 +9,7 @@ from telethon import TelegramClient, events
 from telethon.tl.types import Channel, InputChannel
 
 from bridge.config import Config
-from bridge.discord_handler import (fetch_discord_reference,
+from bridge.discord_handler import (fetch_discord_reference, forward_embed_to_discord,
                                     forward_to_discord, get_mention_roles)
 from bridge.history import MessageHistoryHandler
 from bridge.logger import Logger
@@ -66,6 +66,7 @@ async def start(telegram_client: TelegramClient, discord_client: discord.Client,
                 "forward_everything": channel_mapping.get("forward_everything", False),
                 "forward_hashtags": channel_mapping.get("forward_hashtags", []),
                 "excluded_hashtags": channel_mapping.get("excluded_hashtags", []),
+                "send_embed": channel_mapping.get("send_embed", False),
                 "mention_override": mention_override,
                 "roles": channel_mapping.get("roles", []),
             }
@@ -140,6 +141,7 @@ async def handle_new_message(event, config: Config, telegram_client: TelegramCli
             "strip_off_links": discord_channel_config["strip_off_links"],
             "forward_everything": discord_channel_config["forward_everything"],
             "allowed_forward_hashtags": discord_channel_config["forward_hashtags"],
+            "send_embed": discord_channel_config["send_embed"],
             "disallowed_hashtags": discord_channel_config["excluded_hashtags"],
             "mention_override": discord_channel_config["mention_override"],
             "roles": discord_channel_config["roles"],
@@ -193,7 +195,10 @@ async def handle_new_message(event, config: Config, telegram_client: TelegramCli
                                                           forwarder_name,
                                                           discord_channel) if event.message.reply_to_msg_id else None
 
-        if event.message.media:
+        if forwarder_config["send_embed"]:
+            sent_discord_messages = await forward_embed_to_discord(telegram_client, discord_channel, event)
+
+        elif event.message.media:
             sent_discord_messages = await handle_message_media(telegram_client, event,
                                                                discord_channel,
                                                                message_text,
