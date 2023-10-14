@@ -1,7 +1,12 @@
 """Discord handler."""
+import os
+import uuid
 import asyncio
 import sys
 from typing import List, Sequence
+import telethon.types as tl
+from telethon.tl.functions.photos import GetUserPhotosRequest
+from telethon import TelegramClient
 
 import discord
 from discord import Message, MessageReference, TextChannel
@@ -48,6 +53,63 @@ async def start_discord(config: Config) -> discord.Client:
 
 #  -> Optional[Union[GuildChannel, Thread, PrivateChannel]]:
 
+async def forward_embed_to_discord(telegram_client: TelegramClient, discord_channel: TextChannel, event) -> List[Message]:
+    sent_messages = []
+    files = []
+    message_parts = split_message(event.message.message)
+    embed = discord.Embed(type="rich", colour=discord.Color.teal())
+    try:
+        if event.message.forward:
+            timestamp = event.message.forward.date
+            thumbnail_path = await telegram_client.download_profile_photo(event.message.forward.chat, file=str(uuid.uuid1()))
+            author_path = await telegram_client.download_profile_photo(event.chat,file=str(uuid.uuid1()))
+            main_url="https://t.me/" + event.message.forward.chat.username + "/" + str(event.message.forward.channel_post)
+            author_url="https://t.me/" + event.chat.username + "/" + str(event._message_id)
+            main_title=event.message.forward.chat.title
+            author_title=event.chat.title
+
+            embed.url=main_url
+            embed.timestamp=timestamp
+            embed.title=main_title
+
+            author_file=discord.File(str(author_path))
+            thumbnail_file=discord.File(str(thumbnail_path))
+            files.append(author_file)
+            files.append(thumbnail_file)
+            embed.set_author(name=author_title,url=author_url,icon_url="attachment://"+str(author_path))
+            embed.set_thumbnail(url="attachment://"+str(thumbnail_path))
+
+        else:
+            timestamp = event.message.date
+            main_url="https://t.me/" + event.chat.username + "/" + str(event._message_id)
+            main_title=event.chat.title
+            author_path = await telegram_client.download_profile_photo(event.chat,file=str(uuid.uuid1()))
+
+            embed.timestamp=timestamp
+            embed.url = main_url
+            embed.title=main_title
+
+            author_file=discord.File(str(author_path))
+            files.append(author_file)
+            embed.set_thumbnail(url="attachment://"+str(author_path))
+        if event.message.media:
+            media_path = await telegram_client.download_media(event.message,file=str(uuid.uuid1()))
+            discord_file = discord.File(str(media_path))
+            files.append(discord_file)
+            if event.message.media.document.mime_type.split('/')[0] == 'image':
+                embed.set_image(url="attachment://"+str(media_path))
+
+        for message_part in message_parts:
+                embed.description=message_part
+                sent_message = await discord_channel.send(embed=embed, files=files)
+                sent_messages.append(sent_message)
+    except Exception as ex:
+        logger.error("An error occured while sending a message to discord.")
+        return sent_messages
+    finally:
+        for file in files:
+            os.remove(file._filename)
+    return sent_messages
 
 async def forward_to_discord(discord_channel: TextChannel, message_text: str,
                              image_file=None, reference: MessageReference = ...) -> List[Message]:
