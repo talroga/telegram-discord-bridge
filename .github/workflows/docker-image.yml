@@ -1,6 +1,6 @@
 name: Docker Image CI
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: registry-1.docker.io
   IMAGE_NAME: ${{ github.repository }}
 on:
   push:
