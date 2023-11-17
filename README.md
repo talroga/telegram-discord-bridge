@@ -33,7 +33,7 @@ Next, follow the instructions here (don't worry, they won't bite):
 3. Set up a [**Telegram Application**](https://core.telegram.org/api/obtaining_api_id) and obtain the API creds.
 4. Set up a Discord bridge with the necessary permissions to read and write the messages, and obtain the bridge token.
 
-Now craft a new `config.yml` file in the root directory, starting from the `config-example.yml` file.
+Now craft a new `config.yml` file in the `shared` directory, starting from the `config-example.yml` file.
 **Keep in mind** that in the example below the angular brackets are indicating a placeholder `<>`, **remove them.**
 
 ```yaml
@@ -166,7 +166,7 @@ In addition to text messages, the bridge can forward media files such as photos,
 You can run the bridge in a Docker container. The Docker image is available on [GitHub Packages](https://github.com/hyp3rd/telegram-discord-bridge/pkgs/container/bridge).
 
 ```bash
-docker run -p:8000:8000 -v $(pwd)/config.yml:/app/config.yml:ro -it ghcr.io/hyp3rd/bridge:v1.1.10
+docker run -p:8000:8000 -v $(pwd)/shared:/app/shared:ro -it ghcr.io/hyp3rd/bridge:v1.1.10
 ```
 
 ### Limitations

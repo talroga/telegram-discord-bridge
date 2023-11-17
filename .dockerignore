@@ -262,3 +262,4 @@ telegram_auth.json
 *.pid
 ./tools/ssh-dev-srv
 ./tools/ws/*
+./shared/

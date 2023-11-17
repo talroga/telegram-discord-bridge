@@ -11,6 +11,8 @@ WORKDIR /app
 
 COPY . /app
 
+RUN ln -s shared/config.yml config.yml
+
 RUN apt update && apt upgrade -y \
     && apt install -y libmagic1 \
     && rm -rf /var/lib/apt/lists/* \
